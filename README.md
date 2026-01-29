@@ -2,6 +2,22 @@
 
 This document compares the different RNA 3D folding prediction notebooks and their key differences.
 
+## ⚠️ Important: RNAPro Usage Clarification
+
+**Which notebooks actually use RNAPro?**
+
+| Notebook | Uses RNAPro? | Method |
+|----------|-------------|--------|
+| `stanford-rna-3d-folding-pt2-rnapro-inference.ipynb` | ✅ **YES** | Pure RNAPro (deep learning) |
+| `rnapro-inference-with-tbm-87198f.ipynb` | ✅ **YES** | Hybrid TBM + RNAPro |
+| `0.365 RNAPro inference with TBM tune.ipynb` | ❌ **NO** | TBM only (misleadingly named) |
+| `RNA FOLDING PREDICTION #27JAN.ipynb` | ❌ **NO** | TBM only |
+| `0.358 RNA 3D Folding 2.ipynb` | ❌ **NO** | TBM only |
+| `0.359 RNA FOLDING PREDICTION #25JAN.ipynb` | ❌ **NO** | TBM only |
+| `part1-sub-1-4-4-hybrid-final-take-a0a437.ipynb` | ❌ **NO** | Boltz-1 + DRfold2 + AlphaFold3 |
+
+**Key Finding**: Despite its filename, `0.365 RNAPro inference with TBM tune.ipynb` does NOT contain any RNAPro model code. It only uses Template-Based Modeling (TBM) with sequence alignment and geometric constraints. For actual RNAPro implementations, see the two notebooks listed above.
+
 ## Citations and Attribution
 
 This repository contains notebooks developed for the Stanford RNA 3D Folding competition. Proper attribution is provided below:
@@ -16,9 +32,15 @@ This repository contains notebooks developed for the Stanford RNA 3D Folding com
   - Source: Stanford RNA 3D Folding competition (Kaggle)
   - Competition: [Stanford RNA 3D Folding 2](https://www.kaggle.com/competitions/stanford-rna-3d-folding-2)
   
-- **`0.365 RNAPro inference with TBM tune.ipynb`**: Experimental template-based approach
+- **`0.365 RNAPro inference with TBM tune.ipynb`**: ⚠️ **Misleadingly named** - Template-based approach only (NO RNAPro)
   - Source: Stanford RNA 3D Folding competition (Kaggle)
   - Competition: [Stanford RNA 3D Folding 2](https://www.kaggle.com/competitions/stanford-rna-3d-folding-2)
+  - **Note**: Despite the filename suggesting RNAPro usage, this notebook only uses Template-Based Modeling (TBM). No RNAPro model loading or inference code is present.
+  
+- **`RNA FOLDING PREDICTION #27JAN.ipynb`**: Template-based approach
+  - Source: Stanford RNA 3D Folding competition (Kaggle)
+  - Competition: [Stanford RNA 3D Folding 2](https://www.kaggle.com/competitions/stanford-rna-3d-folding-2)
+  - Similar to 0.365 but with different parameter settings (constraint_strength=0.5, noise_scale=0.25)
   
 - **`part1-sub-1-4-4-hybrid-final-take-a0a437.ipynb`**: Hybrid approach using Boltz-1, DRfold2, and AlphaFold3
   - Source: Stanford RNA 3D Folding competition (Kaggle)
@@ -86,7 +108,19 @@ These notebooks are provided for educational and research purposes. If you use c
 
 ### 3. `0.365 RNAPro inference with TBM tune.ipynb`
 **Approach**: Template-based with tuned parameters  
-**Status**: Experimental version with different parameter settings
+**Status**: ⚠️ **Misleadingly named** - Does NOT use RNAPro, only TBM  
+**Key Finding**: Despite the filename, this notebook contains no RNAPro model code. It only uses:
+- Sequence alignment (BioPython pairwise2)
+- Template adaptation
+- Geometric constraints
+- No deep learning components
+
+### 3b. `RNA FOLDING PREDICTION #27JAN.ipynb`
+**Approach**: Template-based  
+**Status**: Baseline template-based approach  
+**Differences from 0.365**: 
+- Constraint strength: 0.5 (vs 0.4 in 0.365)
+- Random noise scale: 0.25 (vs 0.15 in 0.365)
 
 ### 5. `stanford-rna-3d-folding-pt2-rnapro-inference.ipynb`
 **Approach**: RNAPro deep learning model (can use templates optionally)  
@@ -162,14 +196,19 @@ The notebook `rnapro-inference-with-tbm-87198f.ipynb` shows a **hybrid approach*
 
 ### Key Differences: RNAPro vs Pure TBM
 
-| Feature | Pure TBM (0.358, 0.359, 0.365) | RNAPro | RNAPro + TBM |
-|---------|-------------------------------|--------|--------------|
+| Feature | Pure TBM (0.358, 0.359, 0.365, #27JAN) | RNAPro | RNAPro + TBM |
+|---------|--------------------------------------|--------|--------------|
 | **Method** | Sequence alignment + template adaptation | Deep learning (diffusion) | Hybrid (TBM → RNAPro) |
 | **Input** | Sequence + training structures | Sequence (+ optional templates) | Sequence + TBM predictions |
 | **Learning** | Rule-based heuristics | Learned from data | Learned + template guidance |
 | **Accuracy** | Good for similar sequences | State-of-the-art | Best of both worlds |
 | **Speed** | Fast | Slower (neural network) | Slowest (two-stage) |
 | **Memory** | Low | High (GPU required) | Very high |
+| **Notebooks** | 0.358, 0.359, 0.365, #27JAN | stanford-rna-3d-folding-pt2-rnapro-inference | rnapro-inference-with-tbm-87198f |
+
+**⚠️ Important Note**: The notebook `0.365 RNAPro inference with TBM tune.ipynb` is **misleadingly named**. Despite suggesting RNAPro usage, it only contains TBM code. For actual RNAPro implementations, see:
+- `stanford-rna-3d-folding-pt2-rnapro-inference.ipynb` (Pure RNAPro)
+- `rnapro-inference-with-tbm-87198f.ipynb` (Hybrid TBM + RNAPro)
 
 ### Why Use TBM with RNAPro?
 
@@ -184,17 +223,18 @@ The notebook `rnapro-inference-with-tbm-87198f.ipynb` shows a **hybrid approach*
 
 ### Core Algorithm Differences
 
-| Feature | 0.358 | 0.359 | 0.365 | part1 |
-|---------|-------|-------|-------|-------|
-| **Alignment Library** | Bio.Align.PairwiseAligner | pairwise2 (deprecated) | pairwise2 (deprecated) | Multiple (Boltz-1, DRfold2) |
-| **Gap Open Penalty** | -8.0 | -8.0 | -3.0 | N/A (uses external tools) |
-| **Gap Extend Penalty** | -0.3 | -0.3 | -0.1 | N/A |
-| **Length Threshold** | 0.4 | 0.4 | 0.3 | N/A (handles all lengths) |
-| **Constraint Strength** | 0.7 × (1 - confidence) | 0.5 × (1 - confidence) | 0.4 × (1 - confidence) | Energy-based (DRfold2) |
-| **Seq Distance Range** | 5.8 - 6.1 | 5.8 - 6.1 | 5.5 - 6.5 | N/A |
-| **Target Distance** | 5.95 | 5.95 | 6.0 | N/A |
-| **Random Scale Formula** | max(0.01, (0.4-sim)×0.1) | max(0.02, (0.5-sim)×0.1) | max(0.05, (0.5-sim)×0.15) | N/A |
-| **Step Size Range** | 3.8 - 4.2 | 3.8 - 4.2 | 3.0 - 5.0 | N/A |
+| Feature | 0.358 | 0.359 | 0.365 | #27JAN | part1 |
+|---------|-------|-------|-------|--------|-------|
+| **Alignment Library** | Bio.Align.PairwiseAligner | pairwise2 (deprecated) | pairwise2 (deprecated) | pairwise2 (deprecated) | Multiple (Boltz-1, DRfold2) |
+| **Gap Open Penalty** | -8.0 | -8.0 | -3.0 | -3.0 | N/A (uses external tools) |
+| **Gap Extend Penalty** | -0.3 | -0.3 | -0.1 | -0.1 | N/A |
+| **Length Threshold** | 0.4 | 0.4 | 0.3 | 0.3 | N/A (handles all lengths) |
+| **Constraint Strength** | 0.7 × (1 - confidence) | 0.5 × (1 - confidence) | 0.4 × (1 - confidence) | 0.5 × (1 - confidence) | Energy-based (DRfold2) |
+| **Seq Distance Range** | 5.8 - 6.1 | 5.8 - 6.1 | 5.5 - 6.5 | 5.5 - 6.5 | N/A |
+| **Target Distance** | 5.95 | 5.95 | 6.0 | 6.0 | N/A |
+| **Random Scale Formula** | max(0.01, (0.4-sim)×0.1) | max(0.02, (0.5-sim)×0.1) | max(0.05, (0.5-sim)×0.15) | max(0.05, (0.5-sim)×0.25) | N/A |
+| **Step Size Range** | 3.8 - 4.2 | 3.8 - 4.2 | 3.0 - 5.0 | 3.0 - 5.0 | N/A |
+| **Uses RNAPro** | ❌ No | ❌ No | ❌ No (despite filename) | ❌ No | ❌ No (uses Boltz-1) |
 
 ### Key Code Differences
 
@@ -270,11 +310,19 @@ Key features:
 - Moderate parameters
 - Uses deprecated pairwise2
 
-### 0.365 (Experimental)
+### 0.365 (Experimental) ⚠️ Misleadingly Named
+- **Does NOT use RNAPro** despite filename
 - Looser distance constraints (5.5-6.5)
-- More noise for exploration
-- Weaker constraints
+- More noise for exploration (0.15 scale)
+- Weaker constraints (0.4 strength)
 - Different gap penalties (-3/-0.1)
+- Contains Russian comments suggesting intentional "worsening" parameters
+
+### #27JAN (Baseline TBM)
+- Similar to 0.365 but with different parameters
+- Constraint strength: 0.5 (vs 0.4 in 0.365)
+- Random noise scale: 0.25 (vs 0.15 in 0.365)
+- Uses same deprecated pairwise2 API
 
 ### Part1 (Hybrid)
 - Combines multiple state-of-the-art methods
@@ -364,11 +412,16 @@ The part1 notebook (`part1-sub-1-4-4-hybrid-final-take-a0a437.ipynb`) uses:
 ## Recommendations
 
 ### For Template-Based Approaches:
-- **Use 0.358** for best template-based results (most optimized parameters)
-- **Avoid 0.365** unless experimenting (has intentional "worsening" parameters based on comments)
+- **Use 0.358** for best template-based results (most optimized parameters, modern API)
+- **Use #27JAN** as a baseline for comparison (moderate parameters)
+- **Avoid 0.365** unless experimenting (has intentional "worsening" parameters based on comments, misleadingly named)
+- **Note**: None of these use RNAPro despite 0.365's filename suggesting otherwise
 
 ### For Production:
-- **Use part1** for best overall results (hybrid approach with multiple methods)
+- **Use part1** for best overall results (hybrid approach with multiple methods: Boltz-1 + DRfold2 + AlphaFold3)
+- **Use RNAPro notebooks** for state-of-the-art deep learning predictions:
+  - `stanford-rna-3d-folding-pt2-rnapro-inference.ipynb` for pure RNAPro
+  - `rnapro-inference-with-tbm-87198f.ipynb` for hybrid TBM + RNAPro (best of both worlds)
 - More computationally expensive but handles edge cases better
 
 ### For Development:
@@ -381,24 +434,35 @@ The part1 notebook (`part1-sub-1-4-4-hybrid-final-take-a0a437.ipynb`) uses:
 
 ```
 RNA_stanford_notebooks/
-├── 0.358 RNA 3D Folding 2.ipynb          # Optimized template-based
-├── 0.359 RNA FOLDING PREDICTION #25JAN.ipynb  # Baseline template-based
-├── 0.365 RNAPro inference with TBM tune.ipynb  # Experimental template-based
-├── part1-sub-1-4-4-hybrid-final-take-a0a437.ipynb  # Hybrid approach
-└── README.md                              # This file
+├── 0.358 RNA 3D Folding 2.ipynb                    # Optimized template-based
+├── 0.359 RNA FOLDING PREDICTION #25JAN.ipynb      # Baseline template-based
+├── 0.365 RNAPro inference with TBM tune.ipynb      # ⚠️ TBM only (misleadingly named)
+├── RNA FOLDING PREDICTION #27JAN.ipynb             # Baseline template-based
+├── stanford-rna-3d-folding-pt2-rnapro-inference.ipynb  # Pure RNAPro (deep learning)
+├── rnapro-inference-with-tbm-87198f.ipynb         # Hybrid TBM + RNAPro
+├── part1-sub-1-4-4-hybrid-final-take-a0a437.ipynb  # Hybrid (Boltz-1 + DRfold2 + AlphaFold3)
+└── README.md                                        # This file
 ```
 
 ---
 
 ## Additional Notes
 
-1. **BioPython API Changes**: 0.358 uses the newer `Bio.Align.PairwiseAligner` API, while 0.359 and 0.365 use the deprecated `pairwise2` module.
+1. **BioPython API Changes**: 0.358 uses the newer `Bio.Align.PairwiseAligner` API, while 0.359, 0.365, and #27JAN use the deprecated `pairwise2` module.
 
 2. **Validation Data**: All notebooks attempt to combine train and validation data when available.
 
 3. **Part1 Complexity**: The part1 notebook is significantly more complex, integrating multiple external tools and requiring GPU resources.
 
 4. **Language**: 0.365 contains Russian comments, suggesting it may have been developed by a different contributor.
+
+5. **⚠️ Misleading Filename**: The notebook `0.365 RNAPro inference with TBM tune.ipynb` does NOT actually use RNAPro. Despite the filename suggesting RNAPro usage, it only contains Template-Based Modeling code. For actual RNAPro implementations, see:
+   - `stanford-rna-3d-folding-pt2-rnapro-inference.ipynb` (Pure RNAPro)
+   - `rnapro-inference-with-tbm-87198f.ipynb` (Hybrid TBM + RNAPro)
+
+6. **RNAPro vs TBM**: Only two notebooks actually use RNAPro:
+   - `stanford-rna-3d-folding-pt2-rnapro-inference.ipynb`: Pure RNAPro with optional templates
+   - `rnapro-inference-with-tbm-87198f.ipynb`: Hybrid approach (TBM generates templates → RNAPro refines)
 
 ---
 
