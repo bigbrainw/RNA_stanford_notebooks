@@ -22,10 +22,22 @@ This repository contains notebooks developed for the Stanford RNA 3D Folding com
   
 - **`part1-sub-1-4-4-hybrid-final-take-a0a437.ipynb`**: Hybrid approach using Boltz-1, DRfold2, and AlphaFold3
   - Source: Stanford RNA 3D Folding competition (Kaggle)
-  - Competition: [Stanford RNA 3D Folding 2](https://www.kaggle.com/competitions/stanford-rna-3d-folding-2)
+  - Competition: [Stanford RNA 3D Folding](https://www.kaggle.com/competitions/stanford-rna-3d-folding)
   - **Boltz-1 Credit**: Based on [Boltz-1 Inference Submission](https://www.kaggle.com/code/youhanlee/boltz-1-inference-submission) by youhanlee
   - **DRfold2**: Uses DRfold2 for structure refinement
   - **AlphaFold3**: Integrates AlphaFold3 predictions for long sequences
+
+- **`stanford-rna-3d-folding-pt2-rnapro-inference.ipynb`**: RNAPro deep learning model inference
+  - Source: Stanford RNA 3D Folding competition (Kaggle)
+  - Competition: [Stanford RNA 3D Folding 2](https://www.kaggle.com/competitions/stanford-rna-3d-folding-2)
+  - **RNAPro Credit**: Based on [RNAPro by NVIDIA](https://github.com/NVIDIA-Digital-Bio/RNAPro)
+  - Reference: [RNAPro Inference Notebook](https://www.kaggle.com/code/theoviel/stanford-rna-3d-folding-pt2-rnapro-inference) by theoviel
+
+- **`rnapro-inference-with-tbm-87198f.ipynb`**: Hybrid RNAPro + Template-Based Modeling
+  - Source: Stanford RNA 3D Folding competition (Kaggle)
+  - Competition: [Stanford RNA 3D Folding 2](https://www.kaggle.com/competitions/stanford-rna-3d-folding-2)
+  - **RNAPro Credit**: Based on [RNAPro by NVIDIA](https://github.com/NVIDIA-Digital-Bio/RNAPro)
+  - **TBM Templates**: Uses template-based modeling to generate initial structures for RNAPro
 
 ### External Tools and Libraries
 
@@ -41,9 +53,16 @@ This repository contains notebooks developed for the Stanford RNA 3D Folding com
 - **AlphaFold3**: Protein and RNA structure prediction
   - Source: DeepMind/Google DeepMind
 
+- **RNAPro**: Deep learning model for RNA structure prediction by NVIDIA
+  - Source: [RNAPro GitHub](https://github.com/NVIDIA-Digital-Bio/RNAPro)
+  - Model: [RNAPro-Private-Best-500M](https://huggingface.co/nvidia/RNAPro-Private-Best-500M)
+  - Can work with or without templates (TBM)
+  - Uses diffusion-based sampling for structure generation
+
 ### Competition Data
 
 All notebooks use data from the Stanford RNA 3D Folding 2 competition:
+
 - Competition: [Stanford RNA 3D Folding 2](https://www.kaggle.com/competitions/stanford-rna-3d-folding-2)
 - Data path: `/kaggle/input/stanford-rna-3d-folding-2/`
 
@@ -69,9 +88,95 @@ These notebooks are provided for educational and research purposes. If you use c
 **Approach**: Template-based with tuned parameters  
 **Status**: Experimental version with different parameter settings
 
+### 5. `stanford-rna-3d-folding-pt2-rnapro-inference.ipynb`
+**Approach**: RNAPro deep learning model (can use templates optionally)  
+**Status**: State-of-the-art deep learning approach
+
+### 6. `rnapro-inference-with-tbm-87198f.ipynb`
+**Approach**: Hybrid RNAPro + TBM (Template-Based Modeling)  
+**Status**: Combines template-based modeling with RNAPro refinement
+
 ### 4. `part1-sub-1-4-4-hybrid-final-take-a0a437.ipynb`
 **Approach**: Hybrid (Boltz-1 + DRfold2 + AlphaFold3)  
 **Status**: Most advanced, production-ready hybrid approach
+
+---
+
+## Understanding RNAPro: Deep Learning vs Template-Based Modeling (TBM)
+
+### What is RNAPro?
+
+**RNAPro** is a deep learning model developed by NVIDIA for RNA 3D structure prediction. It's similar in concept to AlphaFold but specifically designed for RNA.
+
+### How RNAPro Works
+
+RNAPro can operate in **two modes**:
+
+#### 1. **Sequence-Only Mode** (De Novo Prediction)
+- **Input**: Just the RNA sequence
+- **Process**: 
+  - Uses Multiple Sequence Alignment (MSA) if available
+  - Feeds sequence features into a deep neural network
+  - Uses diffusion-based sampling to generate 3D coordinates
+- **Output**: Predicted 3D structure
+
+#### 2. **Template-Assisted Mode** (TBM Integration)
+- **Input**: RNA sequence + template structures
+- **Process**:
+  - Finds similar sequences in training data (TBM step)
+  - Uses their 3D structures as templates
+  - RNAPro's neural network refines/combines templates
+  - Diffusion sampling generates final structure
+- **Output**: Template-guided predicted structure
+
+### What is TBM (Template-Based Modeling)?
+
+**TBM** stands for **Template-Based Modeling**. It's a traditional approach that:
+
+1. **Finds similar sequences**: Searches training data for sequences similar to the query
+2. **Aligns sequences**: Uses sequence alignment (e.g., BioPython's PairwiseAligner)
+3. **Extracts templates**: Takes 3D coordinates from similar structures
+4. **Adapts templates**: Maps template coordinates to query sequence positions
+5. **Refines structures**: Applies geometric constraints and refinement
+
+### RNAPro + TBM Hybrid Approach
+
+The notebook `rnapro-inference-with-tbm-87198f.ipynb` shows a **hybrid approach**:
+
+1. **Step 1 - Generate TBM predictions**: 
+   - Uses traditional TBM to find templates and generate initial structures
+   - Creates 5 template-based predictions
+
+2. **Step 2 - Convert to RNAPro templates**:
+   - Converts TBM predictions into template format for RNAPro
+   - RNAPro can use these as starting points
+
+3. **Step 3 - RNAPro refinement**:
+   - RNAPro uses the TBM templates to guide its predictions
+   - Neural network refines and improves the template-based structures
+   - Generates 5 final predictions (one per template)
+
+4. **Step 4 - Fallback strategy**:
+   - For very long sequences (>1000 nucleotides), falls back to pure TBM
+   - RNAPro may have memory/computational limits for very long sequences
+
+### Key Differences: RNAPro vs Pure TBM
+
+| Feature | Pure TBM (0.358, 0.359, 0.365) | RNAPro | RNAPro + TBM |
+|---------|-------------------------------|--------|--------------|
+| **Method** | Sequence alignment + template adaptation | Deep learning (diffusion) | Hybrid (TBM → RNAPro) |
+| **Input** | Sequence + training structures | Sequence (+ optional templates) | Sequence + TBM predictions |
+| **Learning** | Rule-based heuristics | Learned from data | Learned + template guidance |
+| **Accuracy** | Good for similar sequences | State-of-the-art | Best of both worlds |
+| **Speed** | Fast | Slower (neural network) | Slowest (two-stage) |
+| **Memory** | Low | High (GPU required) | Very high |
+
+### Why Use TBM with RNAPro?
+
+1. **Better starting points**: TBM provides good initial structures that RNAPro can refine
+2. **Handles edge cases**: For sequences with very similar templates, TBM can be more reliable
+3. **Long sequences**: RNAPro may struggle with very long sequences, TBM can handle them
+4. **Ensemble diversity**: Combining TBM and RNAPro gives more diverse predictions
 
 ---
 
