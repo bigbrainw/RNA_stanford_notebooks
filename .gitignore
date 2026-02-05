@@ -1,4 +1,2 @@
-/.DS_Store
-venv/
-*.py
-*.png
+/pdf
+/venv
